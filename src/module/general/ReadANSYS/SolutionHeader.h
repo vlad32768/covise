@@ -44,8 +44,8 @@ struct SolutionHeader
     int ptr_extra_t_; // Offset zum EXT_Header
     char title_[80];
     char subtitle_[80];
-    long long offset_; // Fileoffset
-    long long next_offset_; // Fileoffset
+    unsigned long long offset_; // Fileoffset
+    unsigned long long next_offset_; // Fileoffset
     // Jetzt noch ein paar Daten aus dem Double Datensatz
     double time_; // Zeitpunkt bei transienten Daten
     SolutionHeader()

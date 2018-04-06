@@ -32,6 +32,10 @@ const char *exdofname[28] = {
 #include "ReadANSYS.h"
 #include <util/coviseCompat.h>
 
+#ifdef _WIN64
+#define fseek _fseeki64
+#endif
+
 // =============================================================================
 // Konstruktor / Destruktor
 // =============================================================================
@@ -328,7 +332,7 @@ ReadRST::OpenFile(const std::string &filename)
     int true_used_nodes;
     if (header_.version_ < 10)
     {
-        int offset = rstheader_.ptr_node_ * sizeof(int);
+        unsigned long long offset = rstheader_.ptr_node_ * sizeof(int);
         int buf[2];
         fseek(rfp_, offset, SEEK_SET);
         IntRecord(buf, 2);
@@ -343,7 +347,7 @@ ReadRST::OpenFile(const std::string &filename)
         true_used_nodes = rstheader_.usednodes_;
     }
 
-    int offset = (rstheader_.ptr_node_ + 2) * sizeof(int);
+	unsigned long long offset = (rstheader_.ptr_node_ + 2) * sizeof(int);
     fseek(rfp_, offset, SEEK_SET);
 
     nodeindex_ = new int[true_used_nodes /* rstheader_.usednodes_ */];
@@ -448,8 +452,8 @@ ReadRST::SwitchEndian(unsigned int value)
 {
     if (SwitchEndian_ == SWITCH)
     {
-        int ret = 0;
-        int bytes[4];
+        unsigned int ret = 0;
+        unsigned int bytes[4];
 
         bytes[0] = (value & 0x000000FF) << 24;
         bytes[1] = (value & 0x0000FF00) << 8;
@@ -647,7 +651,7 @@ ReadRST::GetDataset(int num, std::vector<int> &codes)
 {
     //  int *buf=NULL;
     int size, i, j, sumdof;
-    long long offset;
+    unsigned long long offset;
     double *dof;
 
     // File sollte offen sein
@@ -691,7 +695,7 @@ ReadRST::GetDataset(int num, std::vector<int> &codes)
     }
 
     offset = solheader_.offset_ + solheader_.ptr_nodalsol_ * 4;
-    fseek(rfp_, (long)offset, SEEK_SET);
+    fseek(rfp_, offset, SEEK_SET);
     int front[2];
     if (IntRecord(front, 2) != 2)
     {
@@ -852,8 +856,8 @@ int
 ReadRST::ReadSHDR(int num)
 {
     unsigned int *buf = NULL, solbuf[103];
-    int size, i;
-    long long offset;
+    unsigned int size, i;
+    unsigned long long offset;
     double dsol[100];
 
     //  SOLUTIONHEADER shdr;
@@ -868,7 +872,7 @@ ReadRST::ReadSHDR(int num)
 
     // Springe erst mal zu der DSI-Tabelle
     offset = rstheader_.ptr_dsi_ * 4;
-    fseek(rfp_, (long)offset, SEEK_SET); // im pointer steht die Anzahl der int-Elemente vom Anfang
+    fseek(rfp_, offset, SEEK_SET); // im pointer steht die Anzahl der int-Elemente vom Anfang
 
     // Jetzt sollte man die Tabelle Lesen koennen. Die ist mitunter aber recht gross
     // gewoehnlich beinhaltet sie 2*1000 Eintraege (besser 1000 64-bit Pointer)
@@ -885,10 +889,10 @@ ReadRST::ReadSHDR(int num)
     // Hi/Lo lesen umdrehen und einfuegen
     if (SwitchEndian_ == DO_NOT_SWITCH)
     {
-        solheader_.offset_ = ((long long)(buf[num + 2 + rstheader_.maxres_]) << 32 | buf[num + 1]) * 4;
+        solheader_.offset_ = ((unsigned long long)(buf[num + 2 + rstheader_.maxres_]) << 32 | buf[num + 1]) * 4;
         if (num < rstheader_.numsets_)
         {
-            solheader_.next_offset_ = ((long long)(buf[num + 3 + rstheader_.maxres_]) << 32 | buf[num + 2]) * 4;
+            solheader_.next_offset_ = ((unsigned long long)(buf[num + 3 + rstheader_.maxres_]) << 32 | buf[num + 2]) * 4;
         }
         else
         {
@@ -897,10 +901,10 @@ ReadRST::ReadSHDR(int num)
     }
     else
     {
-        solheader_.offset_ = ((long long)(SwitchEndian(buf[num + 2 + rstheader_.maxres_])) << 32 | SwitchEndian(buf[num + 1])) * 4;
+        solheader_.offset_ = ((unsigned long long)(SwitchEndian(buf[num + 2 + rstheader_.maxres_])) << 32 | SwitchEndian(buf[num + 1])) * 4;
         if (num < rstheader_.numsets_)
         {
-            solheader_.next_offset_ = ((long long)(SwitchEndian(buf[num + 3 + rstheader_.maxres_])) << 32 | SwitchEndian(buf[num + 2])) * 4;
+            solheader_.next_offset_ = ((unsigned long long)(SwitchEndian(buf[num + 3 + rstheader_.maxres_])) << 32 | SwitchEndian(buf[num + 2])) * 4;
         }
         else
         {
@@ -908,7 +912,7 @@ ReadRST::ReadSHDR(int num)
         }
     }
     // jetzt da hin springen und dort einen Solution Header lesen
-    fseek(rfp_, (long)solheader_.offset_, SEEK_SET);
+    fseek(rfp_, solheader_.offset_, SEEK_SET);
     if (fread(solbuf, sizeof(unsigned int), 103, rfp_) != 103)
     {
         return (4);
@@ -971,7 +975,7 @@ ReadRST::ReadSHDR(int num)
     solheader_.time_ = dsol[0];
 
     offset = solheader_.offset_ + (solheader_.ptr_extra_a_ + 2) * 4;
-    fseek(rfp_, (long)offset, SEEK_SET);
+    fseek(rfp_, offset, SEEK_SET);
     int exdofbuf[64];
     if (IntRecord(exdofbuf, 64) != 64)
     {
@@ -1001,7 +1005,7 @@ int
 ReadRST::GetNodes(void)
 {
     GeometryHeader ghdr;
-    long long offset;
+    unsigned long long offset;
     int size, *buf, i, j, *etybuf;
 
     static const float DGR_TO_RAD = (float)M_PI / 180.0f;
@@ -1011,7 +1015,7 @@ ReadRST::GetNodes(void)
 
     // Springe erst mal zu der Geometrie-Tabelle
     offset = rstheader_.ptr_geo_ * 4;
-    fseek(rfp_, (long)offset, SEEK_SET); // im pointer steht die Anzahl der int-Elemente vom Anfang
+    fseek(rfp_, offset, SEEK_SET); // im pointer steht die Anzahl der int-Elemente vom Anfang
 
     size = 43;
     buf = new int[size];
@@ -1051,7 +1055,7 @@ ReadRST::GetNodes(void)
 
     // Jetzt zu den KNoten springen und diese lesen (Lead in ueberspringen)
     offset = (ghdr.ptr_nodes_ + 2) * 4;
-    fseek(rfp_, (long)offset, SEEK_SET);
+    fseek(rfp_, offset, SEEK_SET);
 
     // Jetzt die NODES definieren
     node_ = new Node[ghdr.nodes_];
@@ -1080,7 +1084,7 @@ ReadRST::GetNodes(void)
 
     // Jetzt die Elemente lesen: zuerst mal zu ETY um die Elementbeschreibungen zu laden
     offset = (ghdr.ptr_ety_ + 2) * 4;
-    fseek(rfp_, (long)offset, SEEK_SET);
+    fseek(rfp_, offset, SEEK_SET);
 
     delete[] buf;
 

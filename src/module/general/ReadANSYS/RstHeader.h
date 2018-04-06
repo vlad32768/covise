@@ -19,18 +19,18 @@ struct RstHeader
     int numelement_; // Anzahl von Finiten Elementen
     int analysis_; // Art der Berechnung
     int numsets_; // Anzahl der Datensätze im File
-    int ptr_eof_; // Offset zum Fileende
-    int ptr_dsi_; // Offset zur Data Step Index Tabelle
-    int ptr_time_; // Offset zur Tabelle der Zeiten
-    int ptr_load_; // Offset zur Tabelle der Load Steps
-    int ptr_elm_; // Offset zur element equivalenz Tabelle
-    int ptr_node_; // Offset zur nodal equivalenz Tabelle
-    int ptr_geo_; // Offset zur Geometriebeschreibung
+    unsigned int ptr_eof_; // Offset zum Fileende
+	unsigned int ptr_dsi_; // Offset zur Data Step Index Tabelle
+	unsigned int ptr_time_; // Offset zur Tabelle der Zeiten
+	unsigned int ptr_load_; // Offset zur Tabelle der Load Steps
+    unsigned int ptr_elm_; // Offset zur element equivalenz Tabelle
+    unsigned int ptr_node_; // Offset zur nodal equivalenz Tabelle
+    unsigned int ptr_geo_; // Offset zur Geometriebeschreibung
     //  int res1[3];        // reserviert
     int units_; // Einheitensystem (z.B. 1=SI)
     int numsectors_; // Zahl der Sektoren für Symmetrie
     //  int res2;           // reserviert
-    long long ptr_end_; // 64-Bit file length
+    unsigned long long ptr_end_; // 64-Bit file length
     //  int res3[17];       // reserviert, inclusive Lead-out
 };
 #endif

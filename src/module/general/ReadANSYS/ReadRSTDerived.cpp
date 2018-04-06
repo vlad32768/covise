@@ -18,6 +18,11 @@ using namespace covise;
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifdef _WIN64
+#define fstat _fstati64
+#define stat _stati64
+#endif
+
 #ifndef MAP_FILE
 #define MAP_FILE 0
 #endif
